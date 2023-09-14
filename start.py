@@ -1,6 +1,6 @@
 import os
 from config.config import DINetInferenceOptions
-from inference import inference
+from inference2 import inference
 import cv2
 import subprocess as sp
 from typing import Generator
