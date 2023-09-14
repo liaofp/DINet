@@ -291,6 +291,7 @@ def inference(config: DINetInferenceOptions):
             :,
         ] = pre_frame_resize[: crop_radius * 3, :, :]
         frame = frame_data[:, :, ::-1]
+        yield frame
         videowriter.write(frame)
     videowriter.release()
     videowriter_face.release()
