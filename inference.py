@@ -105,7 +105,7 @@ if __name__ == "__main__":
         )
     video_landmark_data = load_landmark_openface(
         opt.source_openface_landmark_path
-    ).astype(np.int)
+    ).astype(np.int64)
 
     # align frame with driving audio
     logging.info("aligning frames with driving audio")
@@ -292,15 +292,16 @@ if __name__ == "__main__":
             + crop_radius_1_4,
             :,
         ] = pre_frame_resize[: crop_radius * 3, :, :]
-        videowriter.write(frame_data[:, :, ::-1])
+        frame = frame_data[:, :, ::-1]
+        videowriter.write(frame)
     videowriter.release()
     videowriter_face.release()
-    video_add_audio_path = res_video_path.replace(".mp4", "_add_audio.mp4")
-    if os.path.exists(video_add_audio_path):
-        os.remove(video_add_audio_path)
-    cmd = "ffmpeg -i {} -i {} -c:v copy -c:a aac -strict experimental -map 0:v:0 -map 1:a:0 {}".format(
-        res_video_path, opt.driving_audio_path, video_add_audio_path
-    )
-    subprocess.call(cmd, shell=True)
+    # video_add_audio_path = res_video_path.replace(".mp4", "_add_audio.mp4")
+    # if os.path.exists(video_add_audio_path):
+    #     os.remove(video_add_audio_path)
+    # cmd = "ffmpeg -i {} -i {} -c:v copy -c:a aac -strict experimental -map 0:v:0 -map 1:a:0 {}".format(
+    #     res_video_path, opt.driving_audio_path, video_add_audio_path
+    # )
+    # subprocess.call(cmd, shell=True)
     end_process = default_timer()
     logging.info(f"Video generation took {end_process - start_process:.2f} sec.")
