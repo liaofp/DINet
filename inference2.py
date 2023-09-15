@@ -291,8 +291,8 @@ def inference(config: DINetInferenceOptions):
             :,
         ] = pre_frame_resize[: crop_radius * 3, :, :]
         frame = frame_data[:, :, ::-1]
-        yield frame
         videowriter.write(frame)
+        yield frame
     videowriter.release()
     videowriter_face.release()
     # video_add_audio_path = res_video_path.replace(".mp4", "_add_audio.mp4")
