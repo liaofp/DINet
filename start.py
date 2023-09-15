@@ -72,7 +72,7 @@ def live_stream(config: Namespace):
     pipe = sp.Popen(command, stdin=sp.PIPE)
     frames = inference(config)
     for frame in frames:
-        pipe.stdin.write(frame)
+        pipe.stdin.write(frame.tobytes())
     pipe.stdin.close()
 
 
