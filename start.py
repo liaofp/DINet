@@ -6,7 +6,7 @@ import subprocess as sp
 from typing import Generator
 from argparse import Namespace
 
-DST = "/home/developer/test.mp4"
+DST = "rtmp://192.168.1.119/live/ai.flv"
 
 def read_video(capture: cv2.VideoCapture)-> Generator:
     while capture.isOpened():
@@ -16,20 +16,19 @@ def read_video(capture: cv2.VideoCapture)-> Generator:
         yield frame
 
 def push_stream(config: Namespace)-> None:
-    res_video_path = os.path.join(config.res_video_dir, os.path.basename(config.source_video_path)[:-4] + '_synthetic_face.mp4')
+    # res_video_path = os.path.join(config.res_video_dir, os.path.basename(config.source_video_path)[:-4] + '_synthetic_face.mp4')
+    res_video_path = r""
+
     if not os.path.exists(res_video_path):
         live_stream(config)
     else:
-        file_stream(res_video_path)
+        file_stream(res_video_path, config.driving_audio_path)
 
 def file_stream(video_path: str, audio_path: str):
     capture = cv2.VideoCapture(video_path)
     fps = int(capture.get(cv2.CAP_PROP_FPS))
     width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    # h = int(capture.get(cv2.CAP_PROP_FOURCC))
-    # codec = chr(h&0xff) + chr((h>>8)&0xff) + chr((h>>16)&0xff) + chr((h>>24)&0xff)
-    print(f"fps={fps}, width={width}, height={height}")
     command = ['ffmpeg',
         '-y',
         '-re', # '-re' is requiered when streaming in "real-time"
@@ -40,11 +39,12 @@ def file_stream(video_path: str, audio_path: str):
         '-s', "{}x{}".format(width, height),
         '-r', str(fps),
         '-i', '-',
-        '-vn', '-i', audio_path,  # Get the audio stream without using OpenCV
+        "-i", audio_path,
+        # '-vn', '-i', audio_path,  # Get the audio stream without using OpenCV
         '-c:v', 'libx264',
         '-pix_fmt', 'yuv420p',
         '-preset', 'ultrafast',
-        # '-c:a', 'aac',  # Select audio codec
+        '-c:a', 'aac',  # Select audio codec
         '-bufsize', '64M',  # Buffering is probably required
         '-f', 'flv', 
         DST]
@@ -60,15 +60,26 @@ def file_stream(video_path: str, audio_path: str):
     pipe.stdin.close()
 
 def live_stream(config: Namespace):
-    command = ["ffmpeg",
-               "-i", "-",
-               "-i", "{}".format(config.driving_audio_path),
-               "-c:v", "copy",
-               "-c:a", "aac",
-               "-strict", "experimental",
-               "-map", "0:v:0",
-               "-map", "1:a:0",
-               DST]
+    print(f"直播推流")
+    command = ['ffmpeg',
+        '-y',
+        '-re', # '-re' is requiered when streaming in "real-time"
+        '-f', 'rawvideo',
+        #'-thread_queue_size', '1024',  # May help https://stackoverflow.com/questions/61723571/correct-usage-of-thread-queue-size-in-ffmpeg
+        '-vcodec','rawvideo',
+        '-pix_fmt', 'bgr24',
+         '-s', "{}x{}".format(608, 1080),
+         '-r', str(25),
+        '-i', '-',
+        "-i", config.driving_audio_path,
+        # '-vn', '-i', audio_path,  # Get the audio stream without using OpenCV
+        '-c:v', 'libx264',
+        '-pix_fmt', 'yuv420p',
+        '-preset', 'ultrafast',
+        '-c:a', 'aac',  # Select audio codec
+        '-bufsize', '64M',  # Buffering is probably required
+        '-f', 'flv', 
+        DST]
     pipe = sp.Popen(command, stdin=sp.PIPE)
     frames = inference(config)
     for frame in frames:
