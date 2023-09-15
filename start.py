@@ -22,7 +22,7 @@ def push_stream(config: Namespace)-> None:
     else:
         file_stream(res_video_path)
 
-def file_stream(video_path: str):
+def file_stream(video_path: str, audio_path: str):
     capture = cv2.VideoCapture(video_path)
     fps = int(capture.get(cv2.CAP_PROP_FPS))
     width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -31,22 +31,30 @@ def file_stream(video_path: str):
     # codec = chr(h&0xff) + chr((h>>8)&0xff) + chr((h>>16)&0xff) + chr((h>>24)&0xff)
     print(f"fps={fps}, width={width}, height={height}")
     command = ['ffmpeg',
-           '-y',
-           '-f', 'rawvideo',
-           '-vcodec', 'rawvideo',
-           '-pix_fmt', 'bgr24',
-           '-s', "{}x{}".format(width, height),
-           '-r', str(fps),
-           '-i', '-',
-           '-c:v', 'libx264',
-           '-pix_fmt', 'yuv420p',
-           '-preset', 'ultrafast',
-           '-f', 'flv',
-           '-g', '5',
-           DST]
+        '-y',
+        '-re', # '-re' is requiered when streaming in "real-time"
+        '-f', 'rawvideo',
+        #'-thread_queue_size', '1024',  # May help https://stackoverflow.com/questions/61723571/correct-usage-of-thread-queue-size-in-ffmpeg
+        '-vcodec','rawvideo',
+        '-pix_fmt', 'bgr24',
+        '-s', "{}x{}".format(width, height),
+        '-r', str(fps),
+        '-i', '-',
+        '-vn', '-i', audio_path,  # Get the audio stream without using OpenCV
+        '-c:v', 'libx264',
+        '-pix_fmt', 'yuv420p',
+        '-preset', 'ultrafast',
+        # '-c:a', 'aac',  # Select audio codec
+        '-bufsize', '64M',  # Buffering is probably required
+        '-f', 'flv', 
+        DST]
     pipe = sp.Popen(command, stdin=sp.PIPE)
-    for frame in read_video(capture):
-        # pipe.communicate(input=frame.tobytes())
+    while (capture.isOpened()):
+        ret, frame = capture.read()
+        if not ret:
+            print("End of input file")
+            break
+        # write to pipe
         pipe.stdin.write(frame.tobytes())
     capture.release()
     pipe.stdin.close()
@@ -59,7 +67,7 @@ def live_stream(config: Namespace):
                "-c:a", "aac",
                "-strict", "experimental",
                "-map", "0:v:0",
-               "-map", " 1:a:0",
+               "-map", "1:a:0",
                DST]
     pipe = sp.Popen(command, stdin=sp.PIPE)
     frames = inference(config)
