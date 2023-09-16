@@ -6,7 +6,6 @@ import subprocess as sp
 from typing import Generator
 from argparse import Namespace
 
-DST = "rtmp://192.168.1.119/live/ai.flv"
 
 def read_video(capture: cv2.VideoCapture)-> Generator:
     while capture.isOpened():
@@ -24,7 +23,7 @@ def push_stream(config: Namespace)-> None:
     else:
         file_stream(res_video_path, config.driving_audio_path)
 
-def file_stream(video_path: str, audio_path: str):
+def file_stream(video_path: str, audio_path: str, destination: str):
     capture = cv2.VideoCapture(video_path)
     fps = int(capture.get(cv2.CAP_PROP_FPS))
     width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -47,7 +46,7 @@ def file_stream(video_path: str, audio_path: str):
         '-c:a', 'aac',  # Select audio codec
         '-bufsize', '64M',  # Buffering is probably required
         '-f', 'flv', 
-        DST]
+        destination]
     pipe = sp.Popen(command, stdin=sp.PIPE)
     while (capture.isOpened()):
         ret, frame = capture.read()
@@ -82,7 +81,7 @@ def live_stream(config: Namespace):
         '-c:a', 'aac',  # Select audio codec
         '-bufsize', '64M',  # Buffering is probably required
         '-f', 'flv', 
-        DST]
+        config.destination]
     pipe = sp.Popen(command, stdin=sp.PIPE)
     frames = inference(config)
     for frame in frames:

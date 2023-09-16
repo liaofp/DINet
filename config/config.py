@@ -251,4 +251,5 @@ class DINetInferenceOptions:
             type=str,
             help="path of generated videos",
         )
+        self.parser.add_argument("--destination", type=str, help="destination of pushing stream")
         return self.parser.parse_args()
