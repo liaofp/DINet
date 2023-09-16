@@ -60,7 +60,7 @@ def file_stream(video_path: str, audio_path: str):
     pipe.stdin.close()
 
 def live_stream(config: Namespace):
-    capture = cv2.VideoCapture(config.driving_audio_path)
+    capture = cv2.VideoCapture(config.source_video_path)
     width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
     capture.release()
