@@ -16,8 +16,8 @@ def read_video(capture: cv2.VideoCapture)-> Generator:
         yield frame
 
 def push_stream(config: Namespace)-> None:
-    # res_video_path = os.path.join(config.res_video_dir, os.path.basename(config.source_video_path)[:-4] + '_synthetic_face.mp4')
-    res_video_path = r""
+    res_video_path = os.path.join(config.res_video_dir, os.path.basename(config.source_video_path)[:-4] + "_facial_dubbing.mp4")
+    # res_video_path = r""
 
     if not os.path.exists(res_video_path):
         live_stream(config)
@@ -60,7 +60,10 @@ def file_stream(video_path: str, audio_path: str):
     pipe.stdin.close()
 
 def live_stream(config: Namespace):
-    print(f"直播推流")
+    capture = cv2.VideoCapture(config.driving_audio_path)
+    width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    capture.release()
     command = ['ffmpeg',
         '-y',
         '-re', # '-re' is requiered when streaming in "real-time"
@@ -68,7 +71,7 @@ def live_stream(config: Namespace):
         #'-thread_queue_size', '1024',  # May help https://stackoverflow.com/questions/61723571/correct-usage-of-thread-queue-size-in-ffmpeg
         '-vcodec','rawvideo',
         '-pix_fmt', 'bgr24',
-         '-s', "{}x{}".format(608, 1080),
+         '-s', "{}x{}".format(width, height),
          '-r', str(25),
         '-i', '-',
         "-i", config.driving_audio_path,
@@ -85,6 +88,7 @@ def live_stream(config: Namespace):
     for frame in frames:
         pipe.stdin.write(frame.tobytes())
     pipe.stdin.close()
+    pipe.kill()
 
 
 if __name__ == "__main__":
