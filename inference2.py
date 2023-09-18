@@ -55,14 +55,6 @@ def extract_frames_from_video(video_path, save_dir):
 
 def inference(config: DINetInferenceOptions):
     start_process = default_timer()
-    # load config
-    if not os.path.exists(config.source_video_path):
-        raise ValueError("wrong video path : {}".format(config.source_video_path))
-    if not os.path.exists(config.source_openface_landmark_path):
-        raise ValueError(
-            "wrong openface stats path : {}".format(config.source_openface_landmark_path)
-        )
-
     # extract frames from source video
     logging.info("extracting frames from video: %s", config.source_video_path)
     start_time = time.time()
