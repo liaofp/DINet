@@ -21,7 +21,7 @@ def push_stream(config: Namespace)-> None:
     if not os.path.exists(res_video_path):
         live_stream(config)
     else:
-        file_stream(res_video_path, config.driving_audio_path)
+        file_stream(res_video_path, config.driving_audio_path, config.destination)
 
 def file_stream(video_path: str, audio_path: str, destination: str):
     capture = cv2.VideoCapture(video_path)
